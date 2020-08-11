@@ -3,6 +3,8 @@ import type { Writable } from './_stream_writable'
 import type { Duplex } from './_stream_duplex'
 import type { Transform } from './_stream_transform'
 
+type BufferEncoding = "ascii" | "utf8" | "utf-8" | "utf16le" | "ucs2" | "ucs-2" | "base64" | "latin1" | "binary" | "hex"
+
 export type TransformCallback = (error?: Error | null, data?: any) => void
 
 export interface Class<T> {

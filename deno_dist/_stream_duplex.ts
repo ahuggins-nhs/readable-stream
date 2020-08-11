@@ -27,8 +27,30 @@
 import inherits from './internal/inherits.ts'
 import { Readable } from './_stream_readable.ts'
 import { Writable } from './_stream_writable.ts'
+import type { DuplexOptions } from './Interfaces.ts'
 
-export type Duplex = new (options: any) => Duplex;
+export interface Duplex extends Readable {
+  constructor(options?: DuplexOptions): Duplex;
+  readonly writable: boolean;
+  readonly writableEnded: boolean;
+  readonly writableFinished: boolean;
+  readonly writableHighWaterMark: number;
+  readonly writableLength: number;
+  readonly writableObjectMode: boolean;
+  readonly writableCorked: number;
+  _write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void): void;
+  _writev?(chunks: Array<{ chunk: any, encoding: BufferEncoding }>, callback: (error?: Error | null) => void): void;
+  _destroy(error: Error | null, callback: (error: Error | null) => void): void;
+  _final(callback: (error?: Error | null) => void): void;
+  write(chunk: any, encoding?: BufferEncoding, cb?: (error: Error | null | undefined) => void): boolean;
+  write(chunk: any, cb?: (error: Error | null | undefined) => void): boolean;
+  setDefaultEncoding(encoding: BufferEncoding): this;
+  end(cb?: () => void): void;
+  end(chunk: any, cb?: () => void): void;
+  end(chunk: any, encoding?: BufferEncoding, cb?: () => void): void;
+  cork(): void;
+  uncork(): void;
+}
 
 /*<replacement>*/
 
@@ -55,7 +77,7 @@ inherits(Duplex, Readable);
   }
 }
 
-export function Duplex(options): void {
+export function Duplex(options?: DuplexOptions): void {
   if (!(this instanceof Duplex)) return new Duplex(options);
   Readable.call(this, options);
   Writable.call(this, options);
