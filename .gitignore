@@ -6,3 +6,5 @@ package-lock.json
 *.tap
 .airtaprc
 yarn.lock
+dist/**
+type_dist/**

@@ -187,7 +187,7 @@ WritableState.prototype.getBuffer = function getBuffer() {
 (function () {
   try {
     Object.defineProperty(WritableState.prototype, 'buffer', {
-      get: internalUtil.deprecate(function writableStateBufferGetter() {
+      get: (internalUtil.deprecate as any)(function writableStateBufferGetter() {
         return this.getBuffer();
       }, '_writableState.buffer is deprecated. Use _writableState.getBuffer ' + 'instead.', 'DEP0003')
     });
