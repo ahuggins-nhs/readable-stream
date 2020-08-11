@@ -24,7 +24,7 @@
 // Writable.
 'use strict';
 
-import inherits from 'inherits'
+import inherits from './internal/inherits'
 import { Readable } from './_stream_readable'
 import { Writable } from './_stream_writable'
 

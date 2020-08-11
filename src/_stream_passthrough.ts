@@ -23,7 +23,7 @@
 // Every written chunk gets output as-is.
 'use strict';
 
-import inherits from 'inherits'
+import inherits from './internal/inherits'
 import { Transform } from './_stream_transform'
 
 export type PassThrough = new (options: any) => PassThrough;

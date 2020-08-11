@@ -2,7 +2,7 @@
 // permission from the author, Mathias Buus (@mafintosh).
 'use strict';
 
-import { codes } from '../../../errors'
+import { codes } from '../.././errors'
 
 var ERR_STREAM_PREMATURE_CLOSE = codes.ERR_STREAM_PREMATURE_CLOSE;
 

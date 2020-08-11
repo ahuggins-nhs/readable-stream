@@ -24,9 +24,9 @@
 'use strict';
 
 import { Buffer } from 'buffer'
-import deprecate from 'util-deprecate'
-import inherits from 'inherits'
-import { codes as _require$codes } from '../errors'
+import deprecate from './internal/util_deprecate'
+import inherits from './internal/inherits'
+import { codes as _require$codes } from './errors'
 import { getHighWaterMark } from './internal/streams/state'
 import * as destroyImpl from './internal/streams/destroy'
 import Stream from './internal/streams/stream'

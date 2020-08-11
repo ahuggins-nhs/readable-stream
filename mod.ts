@@ -1,5 +1,0 @@
-export * from './src/_stream_readable'
-export * from './src/_stream_writable'
-export * from './src/_stream_duplex'
-export * from './src/_stream_transform'
-export * from './src/_stream_passthrough'

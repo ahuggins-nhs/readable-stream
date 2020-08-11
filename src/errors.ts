@@ -1,6 +1,6 @@
 'use strict';
 
-import type { Class } from './src/Interfaces'
+import type { Class } from './Interfaces'
 
 export const codes: { [key: string]: Class<Error> } = {};
 

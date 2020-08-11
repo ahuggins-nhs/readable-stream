@@ -1,6 +1,6 @@
 'use strict';
 
-import { codes } from '../../../errors'
+import { codes } from '../.././errors'
 
 var ERR_INVALID_OPT_VALUE = codes.ERR_INVALID_OPT_VALUE;
 

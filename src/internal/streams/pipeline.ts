@@ -2,7 +2,7 @@
 // permission from the author, Mathias Buus (@mafintosh).
 'use strict';
 
-import { codes as _require$codes } from '../../../errors'
+import { codes as _require$codes } from '../.././errors'
 
 var eos;
 

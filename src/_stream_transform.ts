@@ -61,8 +61,8 @@
 // the results of the previous transformed chunk were consumed.
 'use strict';
 
-import inherits from 'inherits'
-import { codes as _require$codes } from '../errors'
+import inherits from './internal/inherits'
+import { codes as _require$codes } from './errors'
 import { Duplex } from './_stream_duplex'
 
 export type Transform = new (options: any) => Transform;

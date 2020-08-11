@@ -22,9 +22,9 @@
 
 import { EventEmitter } from 'events'
 import { Buffer } from 'buffer'
-import { StringDecoder } from 'string_decoder'
-import inherits from 'inherits'
-import { codes as _require$codes } from '../errors'
+import { StringDecoder } from './internal/string_decoder'
+import inherits from './internal/inherits'
+import { codes as _require$codes } from './errors'
 import { buffer_list as BufferList } from './internal/streams/buffer_list'
 import { getHighWaterMark } from './internal/streams/state'
 import * as destroyImpl from './internal/streams/destroy'
