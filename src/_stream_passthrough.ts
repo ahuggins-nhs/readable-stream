@@ -21,21 +21,21 @@
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
 // Every written chunk gets output as-is.
-'use strict';
+'use strict'
 
 import inherits from './internal/inherits'
 import { Transform } from './_stream_transform'
-import { TransformOptions } from './Interfaces';
+import { TransformOptions } from './Interfaces'
 
 export interface PassThrough extends Transform {}
 
-inherits(PassThrough, Transform);
+inherits(PassThrough, Transform)
 
-export function PassThrough(options?: TransformOptions): void {
-  if (!(this instanceof PassThrough)) return new PassThrough(options);
-  Transform.call(this, options);
+export function PassThrough (options?: TransformOptions): void {
+  if (!(this instanceof PassThrough)) return new PassThrough(options)
+  Transform.call(this, options)
 }
 
 PassThrough.prototype._transform = function (chunk, encoding, cb) {
-  cb(null, chunk);
-};
+  cb(null, chunk)
+}

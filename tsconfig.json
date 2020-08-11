@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2019",
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "allowSyntheticDefaultImports": true,
     "declaration": true,
     "outDir": "dist"
