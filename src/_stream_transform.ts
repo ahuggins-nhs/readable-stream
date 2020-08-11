@@ -64,8 +64,13 @@
 import inherits from './internal/inherits'
 import { codes as _require$codes } from './errors'
 import { Duplex } from './_stream_duplex'
+import { TransformCallback, TransformOptions } from './Interfaces';
 
-export type Transform = new (options: any) => Transform;
+export interface Transform extends Duplex {
+  constructor(options?: TransformOptions): Transform;
+  _transform(chunk: any, encoding: BufferEncoding, callback: TransformCallback): void;
+  _flush(callback: TransformCallback): void;
+}
 
 var ERR_METHOD_NOT_IMPLEMENTED = _require$codes.ERR_METHOD_NOT_IMPLEMENTED
 var ERR_MULTIPLE_CALLBACK = _require$codes.ERR_MULTIPLE_CALLBACK
@@ -96,7 +101,7 @@ function afterTransform(er, data) {
   }
 }
 
-export function Transform(options): void {
+export function Transform(options?: TransformOptions): void {
   if (!(this instanceof Transform)) return new Transform(options);
   Duplex.call(this, options);
   this._transformState = {

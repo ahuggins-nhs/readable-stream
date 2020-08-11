@@ -25,12 +25,13 @@
 
 import inherits from './internal/inherits'
 import { Transform } from './_stream_transform'
+import { TransformOptions } from './Interfaces';
 
-export type PassThrough = new (options: any) => PassThrough;
+export interface PassThrough extends Transform {}
 
 inherits(PassThrough, Transform);
 
-export function PassThrough(options): void {
+export function PassThrough(options?: TransformOptions): void {
   if (!(this instanceof PassThrough)) return new PassThrough(options);
   Transform.call(this, options);
 }
