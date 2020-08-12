@@ -16,27 +16,27 @@
  * @api public
  */
 
-export default function deprecate (fn, msg) {
+export default function deprecate (fn: Function, msg: string) {
   if (config('noDeprecation')) {
-    return fn;
+    return fn
   }
 
-  var warned = false;
-  function deprecated() {
+  var warned = false
+  function deprecated () {
     if (!warned) {
       if (config('throwDeprecation')) {
-        throw new Error(msg);
+        throw new Error(msg)
       } else if (config('traceDeprecation')) {
-        console.trace(msg);
+        console.trace(msg)
       } else {
-        console.warn(msg);
+        console.warn(msg)
       }
-      warned = true;
+      warned = true
     }
-    return fn.apply(this, arguments);
+    return fn.apply(this, arguments)
   }
 
-  return deprecated;
+  return deprecated
 }
 
 /**
@@ -47,14 +47,14 @@ export default function deprecate (fn, msg) {
  * @api private
  */
 
-function config (name) {
+function config (name: string) {
   // accessing global.localStorage can trigger a DOMException in sandboxed iframes
   try {
-    if (!global.localStorage) return false;
+    if (!global.localStorage) return false
   } catch (_) {
-    return false;
+    return false
   }
-  var val = global.localStorage[name];
-  if (null == val) return false;
-  return String(val).toLowerCase() === 'true';
+  var val = global.localStorage[name]
+  if (null == val) return false
+  return String(val).toLowerCase() === 'true'
 }

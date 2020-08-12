@@ -35,15 +35,17 @@ import { Duplex } from './_stream_duplex'
 import { ReadableOptions } from './Interfaces'
 
 export interface Readable {
-  constructor(options?: ReadableOptions): Readable
+  new (options?: ReadableOptions): Readable
+  ReadableState: ReadableState
   readable: boolean
-  readonly readableEncoding: BufferEncoding | null
-  readonly readableEnded: boolean
-  readonly readableFlowing: boolean | null
-  readonly readableHighWaterMark: number
-  readonly readableLength: number
-  readonly readableObjectMode: boolean
+  readableEncoding: BufferEncoding | null
+  readableEnded: boolean
+  readableFlowing: boolean | null
+  readableHighWaterMark: number
+  readableLength: number
+  readableObjectMode: boolean
   destroyed: boolean
+  _fromList(n: any, state: any): any
   _read(size: number): void
   read(size?: number): any
   setEncoding(encoding: BufferEncoding): this
@@ -56,6 +58,7 @@ export interface Readable {
   push(chunk: any, encoding?: BufferEncoding): boolean
   _destroy(error: Error | null, callback: (error?: Error | null) => void): void
   destroy(error?: Error): void
+  from(iterable: any, opts: any): never
 
   /**
    * Event emitter
@@ -134,23 +137,26 @@ export interface Readable {
   [Symbol.asyncIterator](): AsyncIterableIterator<any>
 }
 
-Readable.ReadableState = ReadableState
+interface ReadableState {
+  new (options: any, stream: any, isDuplex?: boolean): ReadableState
+}
+
 /*<replacement>*/
 
 var EE = EventEmitter
 
-var EElistenerCount = function EElistenerCount (emitter, type) {
+var EElistenerCount = function EElistenerCount (emitter: EventEmitter, type: string | symbol) {
   return emitter.listeners(type).length
 }
 /*</replacement>*/
 
 var OurUint8Array = global.Uint8Array || function () {}
 
-function _uint8ArrayToBuffer (chunk) {
+function _uint8ArrayToBuffer (chunk: any) {
   return Buffer.from(chunk)
 }
 
-function _isUint8Array (obj) {
+function _isUint8Array (obj: any) {
   return Buffer.isBuffer(obj) || obj instanceof OurUint8Array
 }
 /*<replacement>*/
@@ -163,12 +169,10 @@ var ERR_STREAM_PUSH_AFTER_EOF = _require$codes.ERR_STREAM_PUSH_AFTER_EOF
 var ERR_METHOD_NOT_IMPLEMENTED = _require$codes.ERR_METHOD_NOT_IMPLEMENTED
 var ERR_STREAM_UNSHIFT_AFTER_END_EVENT = _require$codes.ERR_STREAM_UNSHIFT_AFTER_END_EVENT // Lazy loaded to improve the startup performance.
 
-inherits(Readable, Stream)
-
 var errorOrDestroy = destroyImpl.errorOrDestroy
 var kProxyEvents = ['error', 'close', 'destroy', 'pause', 'resume']
 
-function prependListener (emitter, event, fn) {
+function prependListener (emitter: any, event: string | symbol, fn: Function) {
   // Sadly this is not cacheable as some libraries bundle their own
   // event emitter implementation with them.
   if (typeof emitter.prependListener === 'function') return emitter.prependListener(event, fn) // This is a hack to make sure that our error handler is attached before any
@@ -181,7 +185,7 @@ function prependListener (emitter, event, fn) {
   else emitter._events[event] = [fn, emitter._events[event]]
 }
 
-function ReadableState (options, stream, isDuplex) {
+const ReadableState = (function ReadableState (options: any, stream: any, isDuplex?: boolean) {
   options = options || {} // Duplex streams are both readable and writable, but share
   // the same options object.
   // However, some cases require setting options to different
@@ -240,10 +244,10 @@ function ReadableState (options, stream, isDuplex) {
     this.decoder = new StringDecoder(options.encoding)
     this.encoding = options.encoding
   }
-}
+} as unknown) as ReadableState
 
-export function Readable (options?: ReadableOptions): void {
-  if (!(this instanceof Readable)) return new Readable(options) // Checking for a Stream.Duplex instance is faster here instead of inside
+export const Readable = (function Readable (options?: ReadableOptions): void {
+  if (!(this instanceof Readable)) return new (Readable as any)(options) // Checking for a Stream.Duplex instance is faster here instead of inside
   // the ReadableState constructor, at least with V8 6.5
 
   var isDuplex = this instanceof Duplex
@@ -257,7 +261,11 @@ export function Readable (options?: ReadableOptions): void {
   }
 
   Stream.call(this)
-}
+} as unknown) as Readable
+
+Readable.ReadableState = ReadableState
+
+inherits(Readable, Stream)
 
 Object.defineProperty(Readable.prototype, 'destroyed', {
   // making it explicit this property is not enumerable
@@ -285,14 +293,14 @@ Object.defineProperty(Readable.prototype, 'destroyed', {
 Readable.prototype.destroy = destroyImpl.destroy
 Readable.prototype._undestroy = destroyImpl.undestroy
 
-Readable.prototype._destroy = function (err, cb) {
+Readable.prototype._destroy = function (err: any, cb: Function) {
   cb(err)
 } // Manually shove something into the read() buffer.
 // This returns true if the highWaterMark has not been hit yet,
 // similar to how Writable.write() returns true if you should
 // write() some more.
 
-Readable.prototype.push = function (chunk, encoding) {
+Readable.prototype.push = function (chunk: any, encoding?: any) {
   var state = this._readableState
   var skipChunkCheck
 
@@ -314,11 +322,11 @@ Readable.prototype.push = function (chunk, encoding) {
   return readableAddChunk(this, chunk, encoding, false, skipChunkCheck)
 } // Unshift should *always* be something directly out of read()
 
-Readable.prototype.unshift = function (chunk) {
+Readable.prototype.unshift = function (chunk: any) {
   return readableAddChunk(this, chunk, null, true, false)
 }
 
-function readableAddChunk (stream, chunk, encoding, addToFront, skipChunkCheck) {
+function readableAddChunk (stream: any, chunk: any, encoding: any, addToFront: any, skipChunkCheck?: boolean) {
   debug('readableAddChunk', chunk)
   var state = stream._readableState
 
@@ -365,7 +373,7 @@ function readableAddChunk (stream, chunk, encoding, addToFront, skipChunkCheck) 
   return !state.ended && (state.length < state.highWaterMark || state.length === 0)
 }
 
-function addChunk (stream, state, chunk, addToFront) {
+function addChunk (stream: any, state: any, chunk: any, addToFront?: boolean) {
   if (state.flowing && state.length === 0 && !state.sync) {
     state.awaitDrain = 0
     stream.emit('data', chunk)
@@ -380,7 +388,7 @@ function addChunk (stream, state, chunk, addToFront) {
   maybeReadMore(stream, state)
 }
 
-function chunkInvalid (state, chunk) {
+function chunkInvalid (state: any, chunk: any) {
   var er
 
   if (!_isUint8Array(chunk) && typeof chunk !== 'string' && chunk !== undefined && !state.objectMode) {
@@ -394,13 +402,13 @@ Readable.prototype.isPaused = function () {
   return this._readableState.flowing === false
 } // backwards compatibility.
 
-Readable.prototype.setEncoding = function (enc) {
+Readable.prototype.setEncoding = function (enc: string) {
   var decoder = new StringDecoder(enc)
   this._readableState.decoder = decoder // If setEncoding(null), decoder.encoding equals utf8
 
   this._readableState.encoding = this._readableState.decoder.encoding // Iterate over current buffer to convert already stored Buffers:
 
-  var p = this._readableState.buffer.head
+  var p: any = this._readableState.buffer.head
   var content = ''
 
   while (p !== null) {
@@ -417,7 +425,7 @@ Readable.prototype.setEncoding = function (enc) {
 
 var MAX_HWM = 0x40000000
 
-function computeNewHighWaterMark (n) {
+function computeNewHighWaterMark (n: number) {
   if (n >= MAX_HWM) {
     // TODO(ronag): Throw ERR_VALUE_OUT_OF_RANGE.
     n = MAX_HWM
@@ -437,7 +445,7 @@ function computeNewHighWaterMark (n) {
 } // This function is designed to be inlinable, so please take care when making
 // changes to the function body.
 
-function howMuchToRead (n, state) {
+function howMuchToRead (n: number, state: any) {
   if (n <= 0 || (state.length === 0 && state.ended)) return 0
   if (state.objectMode) return 1
 
@@ -458,9 +466,9 @@ function howMuchToRead (n, state) {
   return state.length
 } // you can override either this method, or the async _read(n) below.
 
-Readable.prototype.read = function (n) {
+Readable.prototype.read = function (n: number) {
   debug('read', n)
-  n = parseInt(n, 10)
+  n = parseInt((n as unknown) as string, 10)
   var state = this._readableState
   var nOrig = n
   if (n !== 0) state.emittedReadable = false // if we're doing read(0) to trigger a readable event, but we
@@ -557,7 +565,7 @@ Readable.prototype.read = function (n) {
   return ret
 }
 
-function onEofChunk (stream, state) {
+function onEofChunk (stream: any, state: any) {
   debug('onEofChunk')
   if (state.ended) return
 
@@ -590,7 +598,7 @@ function onEofChunk (stream, state) {
 // another read() call => stack overflow.  This way, it might trigger
 // a nextTick recursion warning, but that's not so bad.
 
-function emitReadable (stream) {
+function emitReadable (stream: any) {
   var state = stream._readableState
   debug('emitReadable', state.needReadable, state.emittedReadable)
   state.needReadable = false
@@ -602,7 +610,7 @@ function emitReadable (stream) {
   }
 }
 
-function emitReadable_ (stream) {
+function emitReadable_ (stream: any) {
   var state = stream._readableState
   debug('emitReadable_', state.destroyed, state.length, state.ended)
 
@@ -625,14 +633,14 @@ function emitReadable_ (stream) {
 // However, if we're not ended, or reading, and the length < hwm,
 // then go ahead and try to read some more preemptively.
 
-function maybeReadMore (stream, state) {
+function maybeReadMore (stream: any, state: any) {
   if (!state.readingMore) {
     state.readingMore = true
     process.nextTick(maybeReadMore_, stream, state)
   }
 }
 
-function maybeReadMore_ (stream, state) {
+function maybeReadMore_ (stream: any, state: any) {
   // Attempt to read more data if we should.
   //
   // The conditions for reading more data are (one of):
@@ -675,11 +683,11 @@ function maybeReadMore_ (stream, state) {
 // for virtual (non-string, non-buffer) streams, "length" is somewhat
 // arbitrary, and perhaps not very meaningful.
 
-Readable.prototype._read = function (n) {
+Readable.prototype._read = function (n: number) {
   errorOrDestroy(this, new ERR_METHOD_NOT_IMPLEMENTED('_read()'))
 }
 
-Readable.prototype.pipe = function (dest, pipeOpts) {
+Readable.prototype.pipe = function (dest: any, pipeOpts: any) {
   var src = this
   var state = this._readableState
 
@@ -705,7 +713,7 @@ Readable.prototype.pipe = function (dest, pipeOpts) {
   else src.once('end', endFn)
   dest.on('unpipe', onunpipe)
 
-  function onunpipe (readable, unpipeInfo) {
+  function onunpipe (readable: any, unpipeInfo: any) {
     debug('onunpipe')
 
     if (readable === src) {
@@ -750,7 +758,7 @@ Readable.prototype.pipe = function (dest, pipeOpts) {
 
   src.on('data', ondata)
 
-  function ondata (chunk) {
+  function ondata (chunk: any) {
     debug('ondata')
     var ret = dest.write(chunk)
     debug('dest.write', ret)
@@ -774,7 +782,7 @@ Readable.prototype.pipe = function (dest, pipeOpts) {
   } // if the dest has an error, then stop piping into it.
   // however, don't suppress the throwing behavior for this.
 
-  function onerror (er) {
+  function onerror (er: any) {
     debug('onerror', er)
     unpipe()
     dest.removeListener('error', onerror)
@@ -813,7 +821,7 @@ Readable.prototype.pipe = function (dest, pipeOpts) {
   return dest
 }
 
-function pipeOnDrain (src) {
+function pipeOnDrain (src: any) {
   return function pipeOnDrainFunctionResult () {
     var state = src._readableState
     debug('pipeOnDrain', state.awaitDrain)
@@ -826,7 +834,7 @@ function pipeOnDrain (src) {
   }
 }
 
-Readable.prototype.unpipe = function (dest) {
+Readable.prototype.unpipe = function (dest: any) {
   var state = this._readableState
   var unpipeInfo = {
     hasUnpiped: false
@@ -873,7 +881,7 @@ Readable.prototype.unpipe = function (dest) {
 } // set up data events if they are asked for
 // Ensure readable listeners eventually get something
 
-Readable.prototype.on = function (ev, fn) {
+Readable.prototype.on = function (ev: any, fn: Function) {
   var res = Stream.prototype.on.call(this, ev, fn)
   var state = this._readableState
 
@@ -903,7 +911,7 @@ Readable.prototype.on = function (ev, fn) {
 
 Readable.prototype.addListener = Readable.prototype.on
 
-Readable.prototype.removeListener = function (ev, fn) {
+Readable.prototype.removeListener = function (ev: any, fn: Function) {
   var res = Stream.prototype.removeListener.call(this, ev, fn)
 
   if (ev === 'readable') {
@@ -919,7 +927,7 @@ Readable.prototype.removeListener = function (ev, fn) {
   return res
 }
 
-Readable.prototype.removeAllListeners = function (ev) {
+Readable.prototype.removeAllListeners = function (ev: any) {
   var res = Stream.prototype.removeAllListeners.apply(this, arguments)
 
   if (ev === 'readable' || ev === undefined) {
@@ -935,7 +943,7 @@ Readable.prototype.removeAllListeners = function (ev) {
   return res
 }
 
-function updateReadableListening (self) {
+function updateReadableListening (self: any) {
   var state = self._readableState
   state.readableListening = self.listenerCount('readable') > 0
 
@@ -948,7 +956,7 @@ function updateReadableListening (self) {
   }
 }
 
-function nReadingNextTick (self) {
+function nReadingNextTick (self: any) {
   debug('readable nexttick read 0')
   self.read(0)
 } // pause() and resume() are remnants of the legacy readable stream API
@@ -970,14 +978,14 @@ Readable.prototype.resume = function () {
   return this
 }
 
-function resume (stream, state) {
+function resume (stream: any, state: any) {
   if (!state.resumeScheduled) {
     state.resumeScheduled = true
     process.nextTick(resume_, stream, state)
   }
 }
 
-function resume_ (stream, state) {
+function resume_ (stream: any, state: any) {
   debug('resume', state.reading)
 
   if (!state.reading) {
@@ -1003,7 +1011,7 @@ Readable.prototype.pause = function () {
   return this
 }
 
-function flow (stream) {
+function flow (stream: any) {
   var state = stream._readableState
   debug('flow', state.flowing)
 
@@ -1012,7 +1020,7 @@ function flow (stream) {
 // This is *not* part of the readable stream interface.
 // It is an ugly unfortunate mess of history.
 
-Readable.prototype.wrap = function (stream) {
+Readable.prototype.wrap = function (stream: any) {
   var _this = this
 
   var state = this._readableState
@@ -1027,7 +1035,7 @@ Readable.prototype.wrap = function (stream) {
 
     _this.push(null)
   })
-  stream.on('data', function (chunk) {
+  stream.on('data', function (chunk: any) {
     debug('wrapped data')
     if (state.decoder) chunk = state.decoder.write(chunk) // don't skip over falsy values in objectMode
 
@@ -1058,7 +1066,7 @@ Readable.prototype.wrap = function (stream) {
   } // when we try to consume some more bytes, simply unpause the
   // underlying stream.
 
-  this._read = function (n) {
+  this._read = function (n: number) {
     debug('wrapped _read', n)
 
     if (paused) {
@@ -1123,7 +1131,7 @@ Object.defineProperty(Readable.prototype, 'readableLength', {
 // This function is designed to be inlinable, so please take care when making
 // changes to the function body.
 
-function fromList (n, state) {
+function fromList (n: number, state: any) {
   // nothing buffered
   if (state.length === 0) return null
   var ret
@@ -1141,7 +1149,7 @@ function fromList (n, state) {
   return ret
 }
 
-function endReadable (stream) {
+function endReadable (stream: any) {
   var state = stream._readableState
   debug('endReadable', state.endEmitted)
 
@@ -1151,7 +1159,7 @@ function endReadable (stream) {
   }
 }
 
-function endReadableNT (state, stream) {
+function endReadableNT (state: any, stream: any) {
   debug('endReadableNT', state.endEmitted, state.length) // Check that we didn't get one last unshift.
 
   if (!state.endEmitted && state.length === 0) {
@@ -1172,12 +1180,12 @@ function endReadableNT (state, stream) {
 }
 
 if (typeof Symbol === 'function') {
-  Readable.from = function (iterable, opts) {
+  Readable.from = function (iterable: any, opts: any): never {
     return streamFrom(Readable, iterable, opts)
   }
 }
 
-function indexOf (xs, x) {
+function indexOf (xs: any, x: number) {
   for (var i = 0, l = xs.length; i < l; i++) {
     if (xs[i] === x) return i
   }

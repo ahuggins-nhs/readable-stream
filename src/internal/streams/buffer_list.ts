@@ -2,7 +2,7 @@
 
 import { Class } from '../../Interfaces'
 
-function ownKeys (object, enumerableOnly?: any) {
+function ownKeys (object: any, enumerableOnly?: boolean) {
   var keys = Object.keys(object)
   if (Object.getOwnPropertySymbols) {
     var symbols = Object.getOwnPropertySymbols(object)
@@ -15,7 +15,7 @@ function ownKeys (object, enumerableOnly?: any) {
   return keys
 }
 
-function _objectSpread (target, ...args: any[]) {
+function _objectSpread (target: any, ...args: any[]) {
   for (var i = 1; i < arguments.length; i++) {
     var source = arguments[i] != null ? arguments[i] : {}
     if (i % 2) {
@@ -33,7 +33,7 @@ function _objectSpread (target, ...args: any[]) {
   return target
 }
 
-function _defineProperty (obj, key, value) {
+function _defineProperty (obj: any, key: string | number | symbol, value: any) {
   if (key in obj) {
     Object.defineProperty(obj, key, {
       value: value,
@@ -47,13 +47,13 @@ function _defineProperty (obj, key, value) {
   return obj
 }
 
-function _classCallCheck (instance, Constructor) {
+function _classCallCheck (instance: any, Constructor: any) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError('Cannot call a class as a function')
   }
 }
 
-function _defineProperties (target, props) {
+function _defineProperties (target: any, props: any[]) {
   for (var i = 0; i < props.length; i++) {
     var descriptor = props[i]
     descriptor.enumerable = descriptor.enumerable || false
@@ -63,7 +63,7 @@ function _defineProperties (target, props) {
   }
 }
 
-function _createClass (Constructor, protoProps, staticProps?: any) {
+function _createClass (Constructor: any, protoProps: any[], staticProps?: any) {
   if (protoProps) _defineProperties(Constructor.prototype, protoProps)
   if (staticProps) _defineProperties(Constructor, staticProps)
   return Constructor
@@ -78,7 +78,7 @@ var _require2 = require('util'),
 
 var custom = (inspect && inspect.custom) || 'inspect'
 
-function copyBuffer (src, target, offset) {
+function copyBuffer (src: Buffer, target: Buffer, offset: number) {
   Buffer.prototype.copy.call(src, target, offset)
 }
 
@@ -95,10 +95,10 @@ export const buffer_list = (function () {
   _createClass(BufferList, [
     {
       key: 'push',
-      value: function push (v) {
+      value: function push (v: any) {
         var entry = {
           data: v,
-          next: null
+          next: null as any
         }
         if (this.length > 0) this.tail.next = entry
         else this.head = entry
@@ -108,7 +108,7 @@ export const buffer_list = (function () {
     },
     {
       key: 'unshift',
-      value: function unshift (v) {
+      value: function unshift (v: any) {
         var entry = {
           data: v,
           next: this.head
@@ -138,7 +138,7 @@ export const buffer_list = (function () {
     },
     {
       key: 'join',
-      value: function join (s) {
+      value: function join (s: string) {
         if (this.length === 0) return ''
         var p = this.head
         var ret = '' + p.data
@@ -152,7 +152,7 @@ export const buffer_list = (function () {
     },
     {
       key: 'concat',
-      value: function concat (n) {
+      value: function concat (n: number) {
         if (this.length === 0) return Buffer.alloc(0)
         var ret = Buffer.allocUnsafe(n >>> 0)
         var p = this.head
@@ -169,7 +169,7 @@ export const buffer_list = (function () {
     },
     {
       key: 'consume',
-      value: function consume (n, hasStrings) {
+      value: function consume (n: number, hasStrings?: boolean) {
         var ret
 
         if (n < this.head.data.length) {
@@ -195,7 +195,7 @@ export const buffer_list = (function () {
     },
     {
       key: '_getString',
-      value: function _getString (n) {
+      value: function _getString (n: number) {
         var p = this.head
         var c = 1
         var ret = p.data
@@ -230,7 +230,7 @@ export const buffer_list = (function () {
     },
     {
       key: '_getBuffer',
-      value: function _getBuffer (n) {
+      value: function _getBuffer (n: number) {
         var ret = Buffer.allocUnsafe(n)
         var p = this.head
         var c = 1
@@ -265,7 +265,7 @@ export const buffer_list = (function () {
     },
     {
       key: custom,
-      value: function value (_, options) {
+      value: function value (_: any, options: any) {
         return inspect(
           this,
           _objectSpread({}, options, {

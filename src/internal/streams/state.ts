@@ -4,11 +4,11 @@ import { codes } from '../.././errors'
 
 var ERR_INVALID_OPT_VALUE = codes.ERR_INVALID_OPT_VALUE
 
-function highWaterMarkFrom (options, isDuplex, duplexKey) {
+function highWaterMarkFrom (options: any, isDuplex: boolean, duplexKey: string | number | symbol) {
   return options.highWaterMark != null ? options.highWaterMark : isDuplex ? options[duplexKey] : null
 }
 
-export function getHighWaterMark (state, options, duplexKey, isDuplex) {
+export function getHighWaterMark (state: any, options: any, duplexKey: string | number | symbol, isDuplex?: boolean) {
   var hwm = highWaterMarkFrom(options, isDuplex, duplexKey)
 
   if (hwm != null) {

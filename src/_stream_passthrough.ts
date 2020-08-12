@@ -29,13 +29,13 @@ import { TransformOptions } from './Interfaces'
 
 export interface PassThrough extends Transform {}
 
-inherits(PassThrough, Transform)
-
-export function PassThrough (options?: TransformOptions): void {
-  if (!(this instanceof PassThrough)) return new PassThrough(options)
+export const PassThrough = function PassThrough (options?: TransformOptions): void {
+  if (!(this instanceof PassThrough)) return new (PassThrough as any)(options)
   Transform.call(this, options)
 }
 
-PassThrough.prototype._transform = function (chunk, encoding, cb) {
+inherits(PassThrough, Transform)
+
+PassThrough.prototype._transform = function (chunk: any, encoding: string, cb: Function) {
   cb(null, chunk)
 }

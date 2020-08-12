@@ -45,7 +45,8 @@
     "cover": "nyc npm test",
     "report": "nyc report --reporter=lcov",
     "update-browser-errors": "babel -o errors-browser.js errors.js",
-    "style": "prettier-standard --lint src/**"
+    "style": "prettier-standard --lint src/**",
+    "denoify": "denoify"
   },
   "repository": {
     "type": "git",

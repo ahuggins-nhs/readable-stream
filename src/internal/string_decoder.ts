@@ -23,6 +23,11 @@
 
 import { Buffer } from 'buffer'
 
+export interface StringDecoder {
+  new (encoding: string): StringDecoder
+  write(buf: Buffer): string
+}
+
 var isEncoding =
   Buffer.isEncoding ||
   function (encoding) {
@@ -45,7 +50,7 @@ var isEncoding =
     }
   }
 
-function _normalizeEncoding (enc) {
+function _normalizeEncoding (enc: string) {
   if (!enc) return 'utf8'
   var retried
   while (true) {
@@ -75,7 +80,7 @@ function _normalizeEncoding (enc) {
 
 // Do not cache `Buffer.isEncoding` when checking encoding names as some
 // modules monkey-patch it to support additional encodings
-function normalizeEncoding (enc) {
+function normalizeEncoding (enc: string) {
   var nenc = _normalizeEncoding(enc)
   if (typeof nenc !== 'string' && (Buffer.isEncoding === isEncoding || !isEncoding(enc)))
     throw new Error('Unknown encoding: ' + enc)
@@ -85,7 +90,7 @@ function normalizeEncoding (enc) {
 // StringDecoder provides an interface for efficiently splitting a series of
 // buffers into a series of JS strings without breaking apart multi-byte
 // characters.
-export function StringDecoder (encoding) {
+export const StringDecoder = (function StringDecoder (encoding: string) {
   this.encoding = normalizeEncoding(encoding)
   var nb
   switch (this.encoding) {
@@ -111,9 +116,9 @@ export function StringDecoder (encoding) {
   this.lastNeed = 0
   this.lastTotal = 0
   this.lastChar = Buffer.allocUnsafe(nb)
-}
+} as unknown) as StringDecoder
 
-StringDecoder.prototype.write = function (buf) {
+StringDecoder.prototype.write = function (buf: Buffer): string {
   if (buf.length === 0) return ''
   var r
   var i
@@ -135,7 +140,7 @@ StringDecoder.prototype.end = utf8End
 StringDecoder.prototype.text = utf8Text
 
 // Attempts to complete a partial non-UTF-8 character using bytes from a Buffer
-StringDecoder.prototype.fillLast = function (buf) {
+StringDecoder.prototype.fillLast = function (buf: Buffer) {
   if (this.lastNeed <= buf.length) {
     buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, this.lastNeed)
     return this.lastChar.toString(this.encoding, 0, this.lastTotal)
@@ -146,7 +151,7 @@ StringDecoder.prototype.fillLast = function (buf) {
 
 // Checks the type of a UTF-8 byte, whether it's ASCII, a leading byte, or a
 // continuation byte. If an invalid byte is detected, -2 is returned.
-function utf8CheckByte (byte) {
+function utf8CheckByte (byte: number) {
   if (byte <= 0x7f) return 0
   else if (byte >> 5 === 0x06) return 2
   else if (byte >> 4 === 0x0e) return 3
@@ -157,7 +162,7 @@ function utf8CheckByte (byte) {
 // Checks at most 3 bytes at the end of a Buffer in order to detect an
 // incomplete multi-byte UTF-8 character. The total number of bytes (2, 3, or 4)
 // needed to complete the UTF-8 character (if applicable) are returned.
-function utf8CheckIncomplete (self, buf, i) {
+function utf8CheckIncomplete (self: any, buf: Buffer, i: number) {
   var j = buf.length - 1
   if (j < i) return 0
   var nb = utf8CheckByte(buf[j])
@@ -191,7 +196,7 @@ function utf8CheckIncomplete (self, buf, i) {
 // where all of the continuation bytes for a character exist in the same buffer.
 // It is also done this way as a slight performance increase instead of using a
 // loop.
-function utf8CheckExtraBytes (self, buf, p) {
+function utf8CheckExtraBytes (self: any, buf: Buffer, p: any) {
   if ((buf[0] & 0xc0) !== 0x80) {
     self.lastNeed = 0
     return '\ufffd'
@@ -211,7 +216,7 @@ function utf8CheckExtraBytes (self, buf, p) {
 }
 
 // Attempts to complete a multi-byte UTF-8 character using bytes from a Buffer.
-function utf8FillLast (buf) {
+function utf8FillLast (buf: Buffer) {
   var p = this.lastTotal - this.lastNeed
   var r = utf8CheckExtraBytes(this, buf, p)
   if (r !== undefined) return r
@@ -226,7 +231,7 @@ function utf8FillLast (buf) {
 // Returns all complete UTF-8 characters in a Buffer. If the Buffer ended on a
 // partial character, the character's bytes are buffered until the required
 // number of bytes are available.
-function utf8Text (buf, i) {
+function utf8Text (buf: Buffer, i: number) {
   var total = utf8CheckIncomplete(this, buf, i)
   if (!this.lastNeed) return buf.toString('utf8', i)
   this.lastTotal = total
@@ -237,7 +242,7 @@ function utf8Text (buf, i) {
 
 // For UTF-8, a replacement character is added when ending on a partial
 // character.
-function utf8End (buf) {
+function utf8End (buf: Buffer) {
   var r = buf && buf.length ? this.write(buf) : ''
   if (this.lastNeed) return r + '\ufffd'
   return r
@@ -247,7 +252,7 @@ function utf8End (buf) {
 // number of bytes available, we need to check if we end on a leading/high
 // surrogate. In that case, we need to wait for the next two bytes in order to
 // decode the last character properly.
-function utf16Text (buf, i) {
+function utf16Text (buf: Buffer, i: number) {
   if ((buf.length - i) % 2 === 0) {
     var r = buf.toString('utf16le', i)
     if (r) {
@@ -270,7 +275,7 @@ function utf16Text (buf, i) {
 
 // For UTF-16LE we do not explicitly append special replacement characters if we
 // end on a partial character, we simply let v8 handle that.
-function utf16End (buf) {
+function utf16End (buf: Buffer) {
   var r = buf && buf.length ? this.write(buf) : ''
   if (this.lastNeed) {
     var end = this.lastTotal - this.lastNeed
@@ -279,7 +284,7 @@ function utf16End (buf) {
   return r
 }
 
-function base64Text (buf, i) {
+function base64Text (buf: Buffer, i: number) {
   var n = (buf.length - i) % 3
   if (n === 0) return buf.toString('base64', i)
   this.lastNeed = 3 - n
@@ -293,17 +298,17 @@ function base64Text (buf, i) {
   return buf.toString('base64', i, buf.length - n)
 }
 
-function base64End (buf) {
+function base64End (buf: Buffer) {
   var r = buf && buf.length ? this.write(buf) : ''
   if (this.lastNeed) return r + this.lastChar.toString('base64', 0, 3 - this.lastNeed)
   return r
 }
 
 // Pass bytes on through for single-byte encodings (e.g. ascii, latin1, hex)
-function simpleWrite (buf) {
+function simpleWrite (buf: Buffer) {
   return buf.toString(this.encoding)
 }
 
-function simpleEnd (buf) {
+function simpleEnd (buf: Buffer) {
   return buf && buf.length ? this.write(buf) : ''
 }

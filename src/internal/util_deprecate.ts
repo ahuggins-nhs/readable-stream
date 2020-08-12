@@ -16,7 +16,7 @@
  * @api public
  */
 
-export default function deprecate (fn, msg) {
+export default function deprecate (fn: Function, msg: string) {
   if (config('noDeprecation')) {
     return fn
   }
@@ -47,7 +47,7 @@ export default function deprecate (fn, msg) {
  * @api private
  */
 
-function config (name) {
+function config (name: string) {
   // accessing global.localStorage can trigger a DOMException in sandboxed iframes
   try {
     if (!global.localStorage) return false

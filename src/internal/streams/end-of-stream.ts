@@ -6,7 +6,7 @@ import { codes } from '../.././errors'
 
 var ERR_STREAM_PREMATURE_CLOSE = codes.ERR_STREAM_PREMATURE_CLOSE
 
-function once (callback) {
+function once (callback: Function) {
   var called = false
   return function () {
     if (called) return
@@ -22,11 +22,11 @@ function once (callback) {
 
 function noop () {}
 
-function isRequest (stream) {
+function isRequest (stream: any) {
   return stream.setHeader && typeof stream.abort === 'function'
 }
 
-export default function eos (stream, opts, callback) {
+export default function eos (stream: any, opts: any, callback: Function): Function {
   if (typeof opts === 'function') return eos(stream, null, opts)
   if (!opts) opts = {}
   callback = once(callback || noop)
@@ -53,7 +53,7 @@ export default function eos (stream, opts, callback) {
     if (!writable) callback.call(stream)
   }
 
-  var onerror = function onerror (err) {
+  var onerror = function onerror (err: any) {
     callback.call(stream, err)
   }
 

@@ -1,4 +1,4 @@
-export default function inherits(ctor, superCtor) {
+export default function inherits (ctor: any, superCtor: any) {
   if (superCtor) {
     ctor.super_ = superCtor
     ctor.prototype = Object.create(superCtor.prototype, {
@@ -10,4 +10,4 @@ export default function inherits(ctor, superCtor) {
       }
     })
   }
-};
+}

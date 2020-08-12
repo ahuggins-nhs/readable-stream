@@ -1,6 +1,6 @@
 'use strict' // undocumented cb() API, needed for core, not for public API
 
-export function destroy (err, cb) {
+export function destroy (err: any, cb: Function) {
   var _this = this
 
   var readableDestroyed = this._readableState && this._readableState.destroyed
@@ -30,7 +30,7 @@ export function destroy (err, cb) {
     this._writableState.destroyed = true
   }
 
-  this._destroy(err || null, function (err) {
+  this._destroy(err || null, function (err: any) {
     if (!cb && err) {
       if (!_this._writableState) {
         process.nextTick(emitErrorAndCloseNT, _this, err)
@@ -51,12 +51,12 @@ export function destroy (err, cb) {
   return this
 }
 
-function emitErrorAndCloseNT (self, err) {
+function emitErrorAndCloseNT (self: any, err: any) {
   emitErrorNT(self, err)
   emitCloseNT(self)
 }
 
-function emitCloseNT (self) {
+function emitCloseNT (self: any) {
   if (self._writableState && !self._writableState.emitClose) return
   if (self._readableState && !self._readableState.emitClose) return
   self.emit('close')
@@ -81,11 +81,11 @@ export function undestroy () {
   }
 }
 
-function emitErrorNT (self, err) {
+function emitErrorNT (self: any, err: any) {
   self.emit('error', err)
 }
 
-export function errorOrDestroy (stream, err) {
+export function errorOrDestroy (stream: any, err: any) {
   // We have tests that rely on errors being emitted
   // in the same tick, so changing this is semver major.
   // For now when you opt-in to autoDestroy we allow

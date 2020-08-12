@@ -30,14 +30,14 @@ import { Writable } from './_stream_writable'
 import { DuplexOptions } from './Interfaces'
 
 export interface Duplex extends Readable {
-  constructor(options?: DuplexOptions): Duplex
-  readonly writable: boolean
-  readonly writableEnded: boolean
-  readonly writableFinished: boolean
-  readonly writableHighWaterMark: number
-  readonly writableLength: number
-  readonly writableObjectMode: boolean
-  readonly writableCorked: number
+  new (options?: DuplexOptions): Duplex
+  writable: boolean
+  writableEnded: boolean
+  writableFinished: boolean
+  writableHighWaterMark: number
+  writableLength: number
+  writableObjectMode: boolean
+  writableCorked: number
   _write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void): void
   _writev?(chunks: Array<{ chunk: any; encoding: BufferEncoding }>, callback: (error?: Error | null) => void): void
   _destroy(error: Error | null, callback: (error: Error | null) => void): void
@@ -56,7 +56,7 @@ export interface Duplex extends Readable {
 
 var objectKeys =
   Object.keys ||
-  function (obj) {
+  function (obj: any) {
     var keys = []
 
     for (var key in obj) {
@@ -67,20 +67,8 @@ var objectKeys =
   }
 /*</replacement>*/
 
-inherits(Duplex, Readable)
-
-{
-  // Allow the keys array to be GC'ed.
-  var keys = objectKeys(Writable.prototype)
-
-  for (var v = 0; v < keys.length; v++) {
-    var method = keys[v]
-    if (!Duplex.prototype[method]) Duplex.prototype[method] = Writable.prototype[method]
-  }
-}
-
-export function Duplex (options?: DuplexOptions): void {
-  if (!(this instanceof Duplex)) return new Duplex(options)
+export const Duplex = (function Duplex (options?: DuplexOptions): void {
+  if (!(this instanceof Duplex)) return new (Duplex as any)(options)
   Readable.call(this, options)
   Writable.call(this, options)
   this.allowHalfOpen = true
@@ -93,6 +81,18 @@ export function Duplex (options?: DuplexOptions): void {
       this.allowHalfOpen = false
       this.once('end', onend)
     }
+  }
+} as unknown) as Duplex
+
+inherits(Duplex, Readable)
+
+{
+  // Allow the keys array to be GC'ed.
+  var keys = objectKeys(Writable.prototype)
+
+  for (var v = 0; v < keys.length; v++) {
+    var method = keys[v]
+    if (!Duplex.prototype[method]) Duplex.prototype[method] = Writable.prototype[method]
   }
 }
 
@@ -132,7 +132,7 @@ function onend () {
   process.nextTick(onEndNT, this)
 }
 
-function onEndNT (self) {
+function onEndNT (self: any) {
   self.end()
 }
 

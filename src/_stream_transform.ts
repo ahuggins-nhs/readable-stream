@@ -67,7 +67,7 @@ import { Duplex } from './_stream_duplex'
 import { TransformCallback, TransformOptions } from './Interfaces'
 
 export interface Transform extends Duplex {
-  constructor(options?: TransformOptions): Transform
+  new (options?: TransformOptions): Transform
   _transform(chunk: any, encoding: BufferEncoding, callback: TransformCallback): void
   _flush(callback: TransformCallback): void
 }
@@ -77,9 +77,7 @@ var ERR_MULTIPLE_CALLBACK = _require$codes.ERR_MULTIPLE_CALLBACK
 var ERR_TRANSFORM_ALREADY_TRANSFORMING = _require$codes.ERR_TRANSFORM_ALREADY_TRANSFORMING
 var ERR_TRANSFORM_WITH_LENGTH_0 = _require$codes.ERR_TRANSFORM_WITH_LENGTH_0
 
-inherits(Transform, Duplex)
-
-function afterTransform (er, data) {
+function afterTransform (er: any, data: any) {
   var ts = this._transformState
   ts.transforming = false
   var cb = ts.writecb
@@ -102,8 +100,8 @@ function afterTransform (er, data) {
   }
 }
 
-export function Transform (options?: TransformOptions): void {
-  if (!(this instanceof Transform)) return new Transform(options)
+export const Transform = (function Transform (options?: TransformOptions): void {
+  if (!(this instanceof Transform)) return new (Transform as any)(options)
   Duplex.call(this, options)
   this._transformState = {
     afterTransform: afterTransform.bind(this),
@@ -126,13 +124,15 @@ export function Transform (options?: TransformOptions): void {
   } // When the writable side finishes, then flush out anything remaining.
 
   this.on('prefinish', prefinish)
-}
+} as unknown) as Transform
+
+inherits(Transform, Duplex)
 
 function prefinish () {
   var _this = this
 
   if (typeof this._flush === 'function' && !this._readableState.destroyed) {
-    this._flush(function (er, data) {
+    this._flush(function (er: any, data: any) {
       done(_this, er, data)
     })
   } else {
@@ -140,7 +140,7 @@ function prefinish () {
   }
 }
 
-Transform.prototype.push = function (chunk, encoding) {
+Transform.prototype.push = function (chunk: any, encoding: string) {
   this._transformState.needTransform = false
   return Duplex.prototype.push.call(this, chunk, encoding)
 } // This is the part where you do stuff!
@@ -154,11 +154,11 @@ Transform.prototype.push = function (chunk, encoding) {
 // an error, then that'll put the hurt on the whole operation.  If you
 // never call cb(), then you'll never get another chunk.
 
-Transform.prototype._transform = function (chunk, encoding, cb) {
+Transform.prototype._transform = function (chunk: any, encoding: string, cb: Function) {
   cb(new ERR_METHOD_NOT_IMPLEMENTED('_transform()'))
 }
 
-Transform.prototype._write = function (chunk, encoding, cb) {
+Transform.prototype._write = function (chunk: any, encoding: string, cb: Function) {
   var ts = this._transformState
   ts.writecb = cb
   ts.writechunk = chunk
@@ -172,7 +172,7 @@ Transform.prototype._write = function (chunk, encoding, cb) {
 // _transform does all the work.
 // That we got here means that the readable side wants more data.
 
-Transform.prototype._read = function (n) {
+Transform.prototype._read = function (n: number) {
   var ts = this._transformState
 
   if (ts.writechunk !== null && !ts.transforming) {
@@ -186,13 +186,13 @@ Transform.prototype._read = function (n) {
   }
 }
 
-Transform.prototype._destroy = function (err, cb) {
-  Duplex.prototype._destroy.call(this, err, function (err2) {
+Transform.prototype._destroy = function (err: any, cb: Function) {
+  Duplex.prototype._destroy.call(this, err, function (err2: any) {
     cb(err2)
   })
 }
 
-function done (stream, er, data) {
+function done (stream: any, er: any, data: any) {
   if (er) return stream.emit('error', er)
   if (data != null)
     // single equals check for both `null` and `undefined`
