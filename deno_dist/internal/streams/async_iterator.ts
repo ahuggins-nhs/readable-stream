@@ -1,5 +1,8 @@
 'use strict'
 
+import { nextTick } from '../next_tick.ts'
+import finished from './end-of-stream.ts'
+
 var _Object$setPrototypeO
 
 function _defineProperty (obj: any, key: string | number | symbol, value: any) {
@@ -15,8 +18,6 @@ function _defineProperty (obj: any, key: string | number | symbol, value: any) {
   }
   return obj
 }
-
-var finished = require('./end-of-stream')
 
 var kLastResolve = Symbol('lastResolve')
 var kLastReject = Symbol('lastReject')
@@ -53,7 +54,7 @@ function readAndResolve (iter: any) {
 function onReadable (iter: any) {
   // we wait for the next tick, because it might
   // emit an error with process.nextTick
-  process.nextTick(readAndResolve, iter)
+  nextTick(readAndResolve, iter)
 }
 
 function wrapForNext (lastPromise: Promise<any>, iter: any) {
@@ -76,7 +77,7 @@ var ReadableStreamAsyncIteratorPrototype = Object.setPrototypeOf(
       return this[kStream]
     },
 
-    next: function next () {
+    next: function next (this: any) {
       var _this = this
 
       // if we have detected an error in the meanwhile
@@ -97,7 +98,7 @@ var ReadableStreamAsyncIteratorPrototype = Object.setPrototypeOf(
         // we cannot guarantee that there is no error lingering around
         // waiting to be emitted.
         return new Promise(function (resolve, reject) {
-          process.nextTick(function () {
+          nextTick(function () {
             if (_this[kError]) {
               reject(_this[kError])
             } else {
@@ -131,10 +132,10 @@ var ReadableStreamAsyncIteratorPrototype = Object.setPrototypeOf(
       return promise
     }
   }),
-  _defineProperty(_Object$setPrototypeO, Symbol.asyncIterator, function () {
+  _defineProperty(_Object$setPrototypeO, Symbol.asyncIterator, function (this: any) {
     return this
   }),
-  _defineProperty(_Object$setPrototypeO, 'return', function _return () {
+  _defineProperty(_Object$setPrototypeO, 'return', function _return (this: any) {
     var _this2 = this
 
     // destroy(err, cb) is a private API

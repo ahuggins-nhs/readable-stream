@@ -24,6 +24,7 @@
 'use strict'
 
 import { Buffer } from 'buffer'
+import { nextTick, NextTickCallback } from './internal/next_tick'
 import deprecate from './internal/util_deprecate'
 import inherits from './internal/inherits'
 import { codes as _require$codes } from './errors'
@@ -32,7 +33,8 @@ import * as destroyImpl from './internal/streams/destroy'
 import Stream from './internal/streams/stream'
 import { Duplex } from './_stream_duplex'
 import { Readable } from './_stream_readable'
-import { WritableOptions } from './Interfaces'
+import { WritableOptions, BufferEncoding } from './Interfaces'
+import EventEmitter from './internal/streams/stream'
 
 export interface Writable {
   new (options?: WritableOptions): Writable
@@ -45,6 +47,7 @@ export interface Writable {
   writableCorked: number
   destroyed: boolean
   WritableState: typeof WritableState
+  _writableState: WritableState
   _write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void): void
   _writev?(chunks: Array<{ chunk: any; encoding: BufferEncoding }>, callback: (error?: Error | null) => void): void
   _destroy(error: Error | null, callback: (error?: Error | null) => void): void
@@ -126,7 +129,11 @@ export interface Writable {
   removeListener(event: string | symbol, listener: (...args: any[]) => void): this
 }
 
-function WriteReq (chunk: any, encoding: string, cb: Function) {
+interface WritableState {
+  new (options: any, stream: any, isDuplex: boolean): WritableState
+}
+
+function WriteReq (this: any, chunk: any, encoding: string, cb: Function) {
   this.chunk = chunk
   this.encoding = encoding
   this.callback = cb
@@ -134,7 +141,7 @@ function WriteReq (chunk: any, encoding: string, cb: Function) {
 } // It seems a linked list but it is not
 // there will be only 2 of these for each stream
 
-const CorkedRequest = (function CorkedRequest (state: any) {
+const CorkedRequest = (function CorkedRequest (this: any, state: any) {
   var _this = this
 
   this.next = null
@@ -152,7 +159,11 @@ var internalUtil = {
 }
 /*</replacement>*/
 
-var OurUint8Array = global.Uint8Array || function () {}
+interface globalThis {
+  Uint8Array: typeof Uint8Array
+}
+
+var OurUint8Array = globalThis.Uint8Array || function () {}
 
 function _uint8ArrayToBuffer (chunk: any) {
   return Buffer.from(chunk)
@@ -175,7 +186,7 @@ var errorOrDestroy = destroyImpl.errorOrDestroy
 
 function nop () {}
 
-const WritableState = (function WritableState (options: any, stream: any, isDuplex: boolean) {
+const WritableState = (function WritableState (this: any, options: any, stream: any, isDuplex: boolean) {
   options = options || {} // Duplex streams are both readable and writable, but share
   // the same options object.
   // However, some cases require setting options to different
@@ -256,7 +267,7 @@ const WritableState = (function WritableState (options: any, stream: any, isDupl
   // one allocated and free to use, and we maintain at most two
 
   this.corkedRequestsFree = new CorkedRequest(this)
-} as unknown) as { new (options: any, stream: any, isDuplex: boolean): any }
+} as unknown) as WritableState
 
 WritableState.prototype.getBuffer = function getBuffer () {
   var current = this.bufferedRequest
@@ -273,7 +284,7 @@ WritableState.prototype.getBuffer = function getBuffer () {
   try {
     Object.defineProperty(WritableState.prototype, 'buffer', {
       get: (internalUtil.deprecate as any)(
-        function writableStateBufferGetter () {
+        function writableStateBufferGetter (this: any) {
           return this.getBuffer()
         },
         '_writableState.buffer is deprecated. Use _writableState.getBuffer ' + 'instead.',
@@ -284,7 +295,7 @@ WritableState.prototype.getBuffer = function getBuffer () {
 })() // Test _writableState for inheritance to account for Duplex streams,
 // whose prototype chain only points to Readable.
 
-export const Writable = (function Writable (options?: WritableOptions): void {
+export const Writable = (function Writable (this: Writable, options?: WritableOptions): void {
   // Writable ctor is applied to Duplexes, too.
   // `realHasInstance` is necessary because using plain `instanceof`
   // would return false, as no `_writableState` property is attached.
@@ -307,7 +318,7 @@ export const Writable = (function Writable (options?: WritableOptions): void {
     if (typeof options.final === 'function') this._final = options.final
   }
 
-  Stream.call(this) // Otherwise people can pipe Writable streams, which is just wrong.
+  Stream.call(this as unknown as EventEmitter) // Otherwise people can pipe Writable streams, which is just wrong.
 } as unknown) as Writable
 
 Writable.WritableState = WritableState
@@ -330,7 +341,7 @@ if (
     }
   })
 } else {
-  realHasInstance = function realHasInstance (object: any) {
+  realHasInstance = function realHasInstance (this: any, object: any) {
     return object instanceof this
   }
 }
@@ -339,16 +350,16 @@ Writable.prototype.pipe = function () {
   errorOrDestroy(this, new ERR_STREAM_CANNOT_PIPE())
 }
 
-function writeAfterEnd (stream: any, cb: Function) {
+function writeAfterEnd (stream: any, cb: NextTickCallback) {
   var er = new ERR_STREAM_WRITE_AFTER_END() // TODO: defer error events consistently everywhere, not just the cb
 
   errorOrDestroy(stream, er)
-  process.nextTick(cb, er)
+  nextTick(cb, er)
 } // Checks that a user-supplied chunk is valid, especially for the particular
 // mode the stream is in. Currently this means that `null` is never accepted
 // and undefined/non-string values are only allowed in object mode.
 
-function validChunk (stream: any, state: any, chunk: any, cb: Function) {
+function validChunk (stream: any, state: any, chunk: any, cb: NextTickCallback) {
   var er
 
   if (chunk === null) {
@@ -359,14 +370,14 @@ function validChunk (stream: any, state: any, chunk: any, cb: Function) {
 
   if (er) {
     errorOrDestroy(stream, er)
-    process.nextTick(cb, er)
+    nextTick(cb, er)
     return false
   }
 
   return true
 }
 
-Writable.prototype.write = function (chunk: any, encoding: string, cb: Function) {
+Writable.prototype.write = function (chunk: any, encoding: string, cb: NextTickCallback) {
   var state = this._writableState
   var ret = false
 
@@ -378,7 +389,7 @@ Writable.prototype.write = function (chunk: any, encoding: string, cb: Function)
 
   if (typeof encoding === 'function') {
     cb = encoding
-    encoding = null
+    encoding = null as unknown as string
   }
 
   if (isBuf) encoding = 'buffer'
@@ -401,7 +412,8 @@ Writable.prototype.uncork = function () {
 
   if (state.corked) {
     state.corked--
-    if (!state.writing && !state.corked && !state.bufferProcessing && state.bufferedRequest) clearBuffer(this, state)
+    if (!state.writing && !state.corked && !state.bufferProcessing && state.bufferedRequest)
+      clearBuffer(this, state)
   }
 }
 
@@ -502,16 +514,16 @@ function doWrite (stream: any, state: any, writev: boolean, len: number, chunk: 
   state.sync = false
 }
 
-function onwriteError (stream: any, state: any, sync: boolean, er: any, cb: Function) {
+function onwriteError (stream: any, state: any, sync: boolean, er: any, cb: NextTickCallback) {
   --state.pendingcb
 
   if (sync) {
     // defer the callback if we are being called synchronously
     // to avoid piling up things on the stack
-    process.nextTick(cb, er) // this can emit finish, and it will always happen
+    nextTick(cb, er) // this can emit finish, and it will always happen
     // after error
 
-    process.nextTick(finishMaybe, stream, state)
+    nextTick(finishMaybe, stream, state)
     stream._writableState.errorEmitted = true
     errorOrDestroy(stream, er)
   } else {
@@ -549,7 +561,7 @@ function onwrite (stream: any, er: any) {
     }
 
     if (sync) {
-      process.nextTick(afterWrite, stream, state, finished, cb)
+      nextTick(afterWrite, stream, state, finished, cb)
     } else {
       afterWrite(stream, state, finished, cb)
     }
@@ -639,16 +651,16 @@ Writable.prototype._write = function (chunk: any, encoding: string, cb: Function
 
 Writable.prototype._writev = null
 
-Writable.prototype.end = function (chunk: any, encoding: string, cb: Function) {
+Writable.prototype.end = function (chunk: any, encoding: string, cb: NextTickCallback) {
   var state = this._writableState
 
   if (typeof chunk === 'function') {
     cb = chunk
     chunk = null
-    encoding = null
+    encoding = null as unknown as string
   } else if (typeof encoding === 'function') {
     cb = encoding
-    encoding = null
+    encoding = null as unknown as string
   }
 
   if (chunk !== null && chunk !== undefined) this.write(chunk, encoding) // .end() fully uncorks
@@ -695,7 +707,7 @@ function prefinish (stream: any, state: any) {
     if (typeof stream._final === 'function' && !state.destroyed) {
       state.pendingcb++
       state.finalCalled = true
-      process.nextTick(callFinal, stream, state)
+      nextTick(callFinal, stream, state)
     } else {
       state.prefinished = true
       stream.emit('prefinish')
@@ -728,12 +740,12 @@ function finishMaybe (stream: any, state: any) {
   return need
 }
 
-function endWritable (stream: any, state: any, cb: Function) {
+function endWritable (stream: any, state: any, cb: NextTickCallback) {
   state.ending = true
   finishMaybe(stream, state)
 
   if (cb) {
-    if (state.finished) process.nextTick(cb)
+    if (state.finished) nextTick(cb)
     else stream.once('finish', cb)
   }
 

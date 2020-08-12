@@ -1,1 +1,1 @@
-export * from "./src/readable.ts";
+export * from "./readable.ts";

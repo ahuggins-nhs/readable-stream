@@ -22,7 +22,7 @@ export default function deprecate (fn: Function, msg: string) {
   }
 
   var warned = false
-  function deprecated () {
+  function deprecated (this: any) {
     if (!warned) {
       if (config('throwDeprecation')) {
         throw new Error(msg)
@@ -48,13 +48,15 @@ export default function deprecate (fn: Function, msg: string) {
  */
 
 function config (name: string) {
-  // accessing global.localStorage can trigger a DOMException in sandboxed iframes
+  // accessing globalThis.localStorage can trigger a DOMException in sandboxed iframes
   try {
-    if (!global.localStorage) return false
+    // @ts-ignore
+    if (!globalThis.localStorage) return false
   } catch (_) {
     return false
   }
-  var val = global.localStorage[name]
+  // @ts-ignore
+  var val = globalThis.localStorage[name]
   if (null == val) return false
   return String(val).toLowerCase() === 'true'
 }

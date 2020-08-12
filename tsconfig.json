@@ -2,8 +2,11 @@
   "compilerOptions": {
     "target": "ES2019",
     "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strictNullChecks": true,
     "allowSyntheticDefaultImports": true,
     "declaration": true,
     "outDir": "dist"
-  }
+  },
+  "exclude": ["deno_dist/**", "dist/**"]
 }

@@ -24,12 +24,13 @@
 // Writable.
 'use strict'
 
+import { nextTick } from './internal/next_tick.ts'
 import inherits from './internal/inherits.ts'
 import { Readable } from './_stream_readable.ts'
 import { Writable } from './_stream_writable.ts'
-import { DuplexOptions } from './Interfaces.ts'
+import { DuplexOptions, BufferEncoding } from './Interfaces.ts'
 
-export interface Duplex extends Readable {
+export interface Duplex extends Readable, Writable {
   new (options?: DuplexOptions): Duplex
   writable: boolean
   writableEnded: boolean
@@ -38,6 +39,99 @@ export interface Duplex extends Readable {
   writableLength: number
   writableObjectMode: boolean
   writableCorked: number
+  allowHalfOpen: boolean
+
+  addListener(event: 'close', listener: () => void): this
+  addListener(event: 'data', listener: (chunk: any) => void): this
+  addListener(event: 'end', listener: () => void): this
+  addListener(event: 'error', listener: (err: Error) => void): this
+  addListener(event: 'pause', listener: () => void): this
+  addListener(event: 'readable', listener: () => void): this
+  addListener(event: 'resume', listener: () => void): this
+  addListener(event: 'drain', listener: () => void): this
+  addListener(event: 'finish', listener: () => void): this
+  addListener(event: 'pipe', listener: (src: Readable) => void): this
+  addListener(event: 'unpipe', listener: (src: Readable) => void): this
+  addListener(event: string | symbol, listener: (...args: any[]) => void): this
+
+  emit(event: 'close', listener: () => void): this
+  emit(event: 'data', listener: (chunk: any) => void): this
+  emit(event: 'end', listener: () => void): this
+  emit(event: 'error', listener: (err: Error) => void): this
+  emit(event: 'pause', listener: () => void): this
+  emit(event: 'readable', listener: () => void): this
+  emit(event: 'resume', listener: () => void): this
+  emit(event: 'drain', listener: () => void): this
+  emit(event: 'finish', listener: () => void): this
+  emit(event: 'pipe', listener: (src: Readable) => void): this
+  emit(event: 'unpipe', listener: (src: Readable) => void): this
+  emit(event: string | symbol, ...args: any[]): boolean
+
+  on(event: 'close', listener: () => void): this
+  on(event: 'data', listener: (chunk: any) => void): this
+  on(event: 'end', listener: () => void): this
+  on(event: 'error', listener: (err: Error) => void): this
+  on(event: 'pause', listener: () => void): this
+  on(event: 'readable', listener: () => void): this
+  on(event: 'resume', listener: () => void): this
+  on(event: 'drain', listener: () => void): this
+  on(event: 'finish', listener: () => void): this
+  on(event: 'pipe', listener: (src: Readable) => void): this
+  on(event: 'unpipe', listener: (src: Readable) => void): this
+  on(event: string | symbol, listener: (...args: any[]) => void): this
+
+  once(event: 'close', listener: () => void): this
+  once(event: 'data', listener: (chunk: any) => void): this
+  once(event: 'end', listener: () => void): this
+  once(event: 'error', listener: (err: Error) => void): this
+  once(event: 'pause', listener: () => void): this
+  once(event: 'readable', listener: () => void): this
+  once(event: 'resume', listener: () => void): this
+  once(event: 'drain', listener: () => void): this
+  once(event: 'finish', listener: () => void): this
+  once(event: 'pipe', listener: (src: Readable) => void): this
+  once(event: 'unpipe', listener: (src: Readable) => void): this
+  once(event: string | symbol, listener: (...args: any[]) => void): this
+
+  prependListener(event: 'close', listener: () => void): this
+  prependListener(event: 'data', listener: (chunk: any) => void): this
+  prependListener(event: 'end', listener: () => void): this
+  prependListener(event: 'error', listener: (err: Error) => void): this
+  prependListener(event: 'pause', listener: () => void): this
+  prependListener(event: 'readable', listener: () => void): this
+  prependListener(event: 'resume', listener: () => void): this
+  prependListener(event: 'drain', listener: () => void): this
+  prependListener(event: 'finish', listener: () => void): this
+  prependListener(event: 'pipe', listener: (src: Readable) => void): this
+  prependListener(event: 'unpipe', listener: (src: Readable) => void): this
+  prependListener(event: string | symbol, listener: (...args: any[]) => void): this
+
+  prependOnceListener(event: 'close', listener: () => void): this
+  prependOnceListener(event: 'data', listener: (chunk: any) => void): this
+  prependOnceListener(event: 'end', listener: () => void): this
+  prependOnceListener(event: 'error', listener: (err: Error) => void): this
+  prependOnceListener(event: 'pause', listener: () => void): this
+  prependOnceListener(event: 'readable', listener: () => void): this
+  prependOnceListener(event: 'resume', listener: () => void): this
+  prependOnceListener(event: 'drain', listener: () => void): this
+  prependOnceListener(event: 'finish', listener: () => void): this
+  prependOnceListener(event: 'pipe', listener: (src: Readable) => void): this
+  prependOnceListener(event: 'unpipe', listener: (src: Readable) => void): this
+  prependOnceListener(event: string | symbol, listener: (...args: any[]) => void): this
+
+  removeListener(event: 'close', listener: () => void): this
+  removeListener(event: 'data', listener: (chunk: any) => void): this
+  removeListener(event: 'end', listener: () => void): this
+  removeListener(event: 'error', listener: (err: Error) => void): this
+  removeListener(event: 'pause', listener: () => void): this
+  removeListener(event: 'readable', listener: () => void): this
+  removeListener(event: 'resume', listener: () => void): this
+  removeListener(event: 'drain', listener: () => void): this
+  removeListener(event: 'finish', listener: () => void): this
+  removeListener(event: 'pipe', listener: (src: Readable) => void): this
+  removeListener(event: 'unpipe', listener: (src: Readable) => void): this
+  removeListener(event: string | symbol, listener: (...args: any[]) => void): this
+
   _write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void): void
   _writev?(chunks: Array<{ chunk: any; encoding: BufferEncoding }>, callback: (error?: Error | null) => void): void
   _destroy(error: Error | null, callback: (error: Error | null) => void): void
@@ -67,7 +161,7 @@ var objectKeys =
   }
 /*</replacement>*/
 
-export const Duplex = (function Duplex (options?: DuplexOptions): void {
+export const Duplex = (function Duplex (this: Duplex, options?: DuplexOptions): void {
   if (!(this instanceof Duplex)) return new (Duplex as any)(options)
   Readable.call(this, options)
   Writable.call(this, options)
@@ -124,12 +218,12 @@ Object.defineProperty(Duplex.prototype, 'writableLength', {
   }
 }) // the no-half-open enforcer
 
-function onend () {
+function onend (this: any) {
   // If the writable side ended, then we're ok.
   if (this._writableState.ended) return // no more data can be written.
   // But allow more writes to happen in this tick.
 
-  process.nextTick(onEndNT, this)
+  nextTick(onEndNT, this)
 }
 
 function onEndNT (self: any) {

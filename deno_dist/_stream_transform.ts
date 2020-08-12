@@ -64,10 +64,11 @@
 import inherits from './internal/inherits.ts'
 import { codes as _require$codes } from './errors.ts'
 import { Duplex } from './_stream_duplex.ts'
-import { TransformCallback, TransformOptions } from './Interfaces.ts'
+import { BufferEncoding, TransformCallback, TransformOptions } from './Interfaces.ts'
 
 export interface Transform extends Duplex {
   new (options?: TransformOptions): Transform
+  _transformState: any
   _transform(chunk: any, encoding: BufferEncoding, callback: TransformCallback): void
   _flush(callback: TransformCallback): void
 }
@@ -77,7 +78,7 @@ var ERR_MULTIPLE_CALLBACK = _require$codes.ERR_MULTIPLE_CALLBACK
 var ERR_TRANSFORM_ALREADY_TRANSFORMING = _require$codes.ERR_TRANSFORM_ALREADY_TRANSFORMING
 var ERR_TRANSFORM_WITH_LENGTH_0 = _require$codes.ERR_TRANSFORM_WITH_LENGTH_0
 
-function afterTransform (er: any, data: any) {
+function afterTransform (this: any, er: any, data: any) {
   var ts = this._transformState
   ts.transforming = false
   var cb = ts.writecb
@@ -100,7 +101,7 @@ function afterTransform (er: any, data: any) {
   }
 }
 
-export const Transform = (function Transform (options?: TransformOptions): void {
+export const Transform = (function Transform (this: Transform, options?: TransformOptions): void {
   if (!(this instanceof Transform)) return new (Transform as any)(options)
   Duplex.call(this, options)
   this._transformState = {
@@ -128,7 +129,7 @@ export const Transform = (function Transform (options?: TransformOptions): void 
 
 inherits(Transform, Duplex)
 
-function prefinish () {
+function prefinish (this: any) {
   var _this = this
 
   if (typeof this._flush === 'function' && !this._readableState.destroyed) {

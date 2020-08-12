@@ -1,14 +1,26 @@
 'use strict'
 
-import { Class } from '../../Interfaces'
+import type { Class } from '../../Interfaces'
+import { Buffer } from 'buffer'
+import * as util from 'util'
+
+let inspect: Function & { custom?: symbol }
+
+if (typeof (util as any).inspect === 'function') {
+  inspect = (util as any).inspect
+} else {
+  inspect = function () {}
+}
 
 function ownKeys (object: any, enumerableOnly?: boolean) {
-  var keys = Object.keys(object)
+  var keys: Array<string | symbol> = Object.keys(object)
   if (Object.getOwnPropertySymbols) {
     var symbols = Object.getOwnPropertySymbols(object)
     if (enumerableOnly)
-      symbols = symbols.filter(function (sym) {
-        return Object.getOwnPropertyDescriptor(object, sym).enumerable
+      symbols = symbols.filter(function (sym: any) {
+        const descriptor = Object.getOwnPropertyDescriptor(object, sym)
+
+        return !descriptor ? false : descriptor.enumerable
       })
     keys.push.apply(keys, symbols)
   }
@@ -26,7 +38,7 @@ function _objectSpread (target: any, ...args: any[]) {
       Object.defineProperties(target, Object.getOwnPropertyDescriptors(source))
     } else {
       ownKeys(Object(source)).forEach(function (key) {
-        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key))
+        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key) || {})
       })
     }
   }
@@ -69,13 +81,6 @@ function _createClass (Constructor: any, protoProps: any[], staticProps?: any) {
   return Constructor
 }
 
-var _require = require('buffer'),
-  // @ts-ignore
-  Buffer = _require.Buffer
-
-var _require2 = require('util'),
-  inspect = _require2.inspect
-
 var custom = (inspect && inspect.custom) || 'inspect'
 
 function copyBuffer (src: Buffer, target: Buffer, offset: number) {
@@ -84,7 +89,7 @@ function copyBuffer (src: Buffer, target: Buffer, offset: number) {
 
 /*#__PURE__*/
 export const buffer_list = (function () {
-  function BufferList () {
+  function BufferList (this: any) {
     _classCallCheck(this, BufferList)
 
     this.head = null

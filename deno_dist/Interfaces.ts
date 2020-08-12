@@ -3,7 +3,7 @@ import { Writable } from './_stream_writable.ts'
 import { Duplex } from './_stream_duplex.ts'
 import { Transform } from './_stream_transform.ts'
 
-type BufferEncoding = 'ascii' | 'utf8' | 'utf-8' | 'utf16le' | 'ucs2' | 'ucs-2' | 'base64' | 'latin1' | 'binary' | 'hex'
+export type BufferEncoding = 'ascii' | 'utf8' | 'utf-8' | 'utf16le' | 'ucs2' | 'ucs-2' | 'base64' | 'latin1' | 'binary' | 'hex'
 
 export type TransformCallback = (error?: Error | null, data?: any) => void
 

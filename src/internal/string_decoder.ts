@@ -90,7 +90,7 @@ function normalizeEncoding (enc: string) {
 // StringDecoder provides an interface for efficiently splitting a series of
 // buffers into a series of JS strings without breaking apart multi-byte
 // characters.
-export const StringDecoder = (function StringDecoder (encoding: string) {
+export const StringDecoder = (function StringDecoder (this: any, encoding: string) {
   this.encoding = normalizeEncoding(encoding)
   var nb
   switch (this.encoding) {
@@ -216,7 +216,7 @@ function utf8CheckExtraBytes (self: any, buf: Buffer, p: any) {
 }
 
 // Attempts to complete a multi-byte UTF-8 character using bytes from a Buffer.
-function utf8FillLast (buf: Buffer) {
+function utf8FillLast (this: any, buf: Buffer) {
   var p = this.lastTotal - this.lastNeed
   var r = utf8CheckExtraBytes(this, buf, p)
   if (r !== undefined) return r
@@ -231,7 +231,7 @@ function utf8FillLast (buf: Buffer) {
 // Returns all complete UTF-8 characters in a Buffer. If the Buffer ended on a
 // partial character, the character's bytes are buffered until the required
 // number of bytes are available.
-function utf8Text (buf: Buffer, i: number) {
+function utf8Text (this: any, buf: Buffer, i: number) {
   var total = utf8CheckIncomplete(this, buf, i)
   if (!this.lastNeed) return buf.toString('utf8', i)
   this.lastTotal = total
@@ -242,7 +242,7 @@ function utf8Text (buf: Buffer, i: number) {
 
 // For UTF-8, a replacement character is added when ending on a partial
 // character.
-function utf8End (buf: Buffer) {
+function utf8End (this: any, buf: Buffer) {
   var r = buf && buf.length ? this.write(buf) : ''
   if (this.lastNeed) return r + '\ufffd'
   return r
@@ -252,7 +252,7 @@ function utf8End (buf: Buffer) {
 // number of bytes available, we need to check if we end on a leading/high
 // surrogate. In that case, we need to wait for the next two bytes in order to
 // decode the last character properly.
-function utf16Text (buf: Buffer, i: number) {
+function utf16Text (this: any, buf: Buffer, i: number) {
   if ((buf.length - i) % 2 === 0) {
     var r = buf.toString('utf16le', i)
     if (r) {
@@ -275,7 +275,7 @@ function utf16Text (buf: Buffer, i: number) {
 
 // For UTF-16LE we do not explicitly append special replacement characters if we
 // end on a partial character, we simply let v8 handle that.
-function utf16End (buf: Buffer) {
+function utf16End (this: any, buf: Buffer) {
   var r = buf && buf.length ? this.write(buf) : ''
   if (this.lastNeed) {
     var end = this.lastTotal - this.lastNeed
@@ -284,7 +284,7 @@ function utf16End (buf: Buffer) {
   return r
 }
 
-function base64Text (buf: Buffer, i: number) {
+function base64Text (this: any, buf: Buffer, i: number) {
   var n = (buf.length - i) % 3
   if (n === 0) return buf.toString('base64', i)
   this.lastNeed = 3 - n
@@ -298,17 +298,17 @@ function base64Text (buf: Buffer, i: number) {
   return buf.toString('base64', i, buf.length - n)
 }
 
-function base64End (buf: Buffer) {
+function base64End (this: any, buf: Buffer) {
   var r = buf && buf.length ? this.write(buf) : ''
   if (this.lastNeed) return r + this.lastChar.toString('base64', 0, 3 - this.lastNeed)
   return r
 }
 
 // Pass bytes on through for single-byte encodings (e.g. ascii, latin1, hex)
-function simpleWrite (buf: Buffer) {
+function simpleWrite (this: any, buf: Buffer) {
   return buf.toString(this.encoding)
 }
 
-function simpleEnd (buf: Buffer) {
+function simpleEnd (this: any, buf: Buffer) {
   return buf && buf.length ? this.write(buf) : ''
 }

@@ -1,6 +1,6 @@
 {
   "name": "readable-stream",
-  "version": "3.6.0-deno.0.1.0",
+  "version": "3.6.0-deno.0.3.0",
   "description": "Streams3, a user-land copy of the stream library from Node.js",
   "main": "dist/src/readable.js",
   "engines": {
@@ -46,7 +46,8 @@
     "report": "nyc report --reporter=lcov",
     "update-browser-errors": "babel -o errors-browser.js errors.js",
     "style": "prettier-standard --lint src/**",
-    "denoify": "denoify"
+    "denoify": "denoify",
+    "deno": "deno run --allow-read --allow-env deno_dist/readable.ts"
   },
   "repository": {
     "type": "git",

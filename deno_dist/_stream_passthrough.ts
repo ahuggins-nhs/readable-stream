@@ -29,7 +29,7 @@ import { TransformOptions } from './Interfaces.ts'
 
 export interface PassThrough extends Transform {}
 
-export const PassThrough = function PassThrough (options?: TransformOptions): void {
+export const PassThrough = function PassThrough (this: PassThrough, options?: TransformOptions): void {
   if (!(this instanceof PassThrough)) return new (PassThrough as any)(options)
   Transform.call(this, options)
 }

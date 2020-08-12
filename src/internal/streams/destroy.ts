@@ -1,6 +1,8 @@
 'use strict' // undocumented cb() API, needed for core, not for public API
 
-export function destroy (err: any, cb: Function) {
+import { nextTick } from '../next_tick'
+
+export function destroy (this: any, err: any, cb: Function) {
   var _this = this
 
   var readableDestroyed = this._readableState && this._readableState.destroyed
@@ -11,10 +13,10 @@ export function destroy (err: any, cb: Function) {
       cb(err)
     } else if (err) {
       if (!this._writableState) {
-        process.nextTick(emitErrorNT, this, err)
+        nextTick(emitErrorNT, this, err)
       } else if (!this._writableState.errorEmitted) {
         this._writableState.errorEmitted = true
-        process.nextTick(emitErrorNT, this, err)
+        nextTick(emitErrorNT, this, err)
       }
     }
 
@@ -33,18 +35,18 @@ export function destroy (err: any, cb: Function) {
   this._destroy(err || null, function (err: any) {
     if (!cb && err) {
       if (!_this._writableState) {
-        process.nextTick(emitErrorAndCloseNT, _this, err)
+        nextTick(emitErrorAndCloseNT, _this, err)
       } else if (!_this._writableState.errorEmitted) {
         _this._writableState.errorEmitted = true
-        process.nextTick(emitErrorAndCloseNT, _this, err)
+        nextTick(emitErrorAndCloseNT, _this, err)
       } else {
-        process.nextTick(emitCloseNT, _this)
+        nextTick(emitCloseNT, _this)
       }
     } else if (cb) {
-      process.nextTick(emitCloseNT, _this)
+      nextTick(emitCloseNT, _this)
       cb(err)
     } else {
-      process.nextTick(emitCloseNT, _this)
+      nextTick(emitCloseNT, _this)
     }
   })
 
@@ -62,7 +64,7 @@ function emitCloseNT (self: any) {
   self.emit('close')
 }
 
-export function undestroy () {
+export function undestroy (this: any) {
   if (this._readableState) {
     this._readableState.destroyed = false
     this._readableState.reading = false

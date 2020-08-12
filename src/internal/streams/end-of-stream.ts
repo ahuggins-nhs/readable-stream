@@ -8,7 +8,7 @@ var ERR_STREAM_PREMATURE_CLOSE = codes.ERR_STREAM_PREMATURE_CLOSE
 
 function once (callback: Function) {
   var called = false
-  return function () {
+  return function (this: any) {
     if (called) return
     called = true
 
@@ -26,7 +26,7 @@ function isRequest (stream: any) {
   return stream.setHeader && typeof stream.abort === 'function'
 }
 
-export default function eos (stream: any, opts: any, callback: Function): Function {
+export default function eos (stream: any, opts: any, callback: Function = noop): Function {
   if (typeof opts === 'function') return eos(stream, null, opts)
   if (!opts) opts = {}
   callback = once(callback || noop)

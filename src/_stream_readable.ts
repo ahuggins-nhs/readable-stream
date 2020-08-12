@@ -22,6 +22,8 @@
 
 import { EventEmitter } from 'events'
 import { Buffer } from 'buffer'
+import process from 'process'
+import { nextTick } from './internal/next_tick'
 import { StringDecoder } from './internal/string_decoder'
 import inherits from './internal/inherits'
 import { codes as _require$codes } from './errors'
@@ -32,11 +34,12 @@ import Stream from './internal/streams/stream'
 import streamFrom from './internal/streams/from'
 import createReadableStreamAsyncIterator from './internal/streams/async_iterator'
 import { Duplex } from './_stream_duplex'
-import { ReadableOptions } from './Interfaces'
+import { ReadableOptions, BufferEncoding } from './Interfaces'
 
 export interface Readable {
   new (options?: ReadableOptions): Readable
-  ReadableState: ReadableState
+  ReadableState: typeof ReadableState
+  _readableState: ReadableState
   readable: boolean
   readableEncoding: BufferEncoding | null
   readableEnded: boolean
@@ -52,9 +55,9 @@ export interface Readable {
   pause(): this
   resume(): this
   isPaused(): boolean
-  unpipe(destination?: NodeJS.WritableStream): this
+  unpipe(destination?: WritableStream): this
   unshift(chunk: any, encoding?: BufferEncoding): void
-  wrap(oldStream: NodeJS.ReadableStream): this
+  wrap(oldStream: ReadableStream): this
   push(chunk: any, encoding?: BufferEncoding): boolean
   _destroy(error: Error | null, callback: (error?: Error | null) => void): void
   destroy(error?: Error): void
@@ -139,6 +142,8 @@ export interface Readable {
 
 interface ReadableState {
   new (options: any, stream: any, isDuplex?: boolean): ReadableState
+  needReadable: boolean
+  sync: boolean
 }
 
 /*<replacement>*/
@@ -149,8 +154,11 @@ var EElistenerCount = function EElistenerCount (emitter: EventEmitter, type: str
   return emitter.listeners(type).length
 }
 /*</replacement>*/
+interface globalThis {
+  Uint8Array: typeof Uint8Array
+}
 
-var OurUint8Array = global.Uint8Array || function () {}
+var OurUint8Array = globalThis.Uint8Array || function () {}
 
 function _uint8ArrayToBuffer (chunk: any) {
   return Buffer.from(chunk)
@@ -185,7 +193,7 @@ function prependListener (emitter: any, event: string | symbol, fn: Function) {
   else emitter._events[event] = [fn, emitter._events[event]]
 }
 
-const ReadableState = (function ReadableState (options: any, stream: any, isDuplex?: boolean) {
+const ReadableState = (function ReadableState (this: any, options: any, stream: any, isDuplex?: boolean) {
   options = options || {} // Duplex streams are both readable and writable, but share
   // the same options object.
   // However, some cases require setting options to different
@@ -246,7 +254,7 @@ const ReadableState = (function ReadableState (options: any, stream: any, isDupl
   }
 } as unknown) as ReadableState
 
-export const Readable = (function Readable (options?: ReadableOptions): void {
+export var Readable = (function Readable (this: Readable, options?: ReadableOptions): void {
   if (!(this instanceof Readable)) return new (Readable as any)(options) // Checking for a Stream.Duplex instance is faster here instead of inside
   // the ReadableState constructor, at least with V8 6.5
 
@@ -260,7 +268,7 @@ export const Readable = (function Readable (options?: ReadableOptions): void {
     if (typeof options.destroy === 'function') this._destroy = options.destroy
   }
 
-  Stream.call(this)
+  Stream.call(this as unknown as EventEmitter)
 } as unknown) as Readable
 
 Readable.ReadableState = ReadableState
@@ -606,7 +614,7 @@ function emitReadable (stream: any) {
   if (!state.emittedReadable) {
     debug('emitReadable', state.flowing)
     state.emittedReadable = true
-    process.nextTick(emitReadable_, stream)
+    nextTick(emitReadable_, stream)
   }
 }
 
@@ -636,7 +644,7 @@ function emitReadable_ (stream: any) {
 function maybeReadMore (stream: any, state: any) {
   if (!state.readingMore) {
     state.readingMore = true
-    process.nextTick(maybeReadMore_, stream, state)
+    nextTick(maybeReadMore_, stream, state)
   }
 }
 
@@ -707,9 +715,9 @@ Readable.prototype.pipe = function (dest: any, pipeOpts: any) {
 
   state.pipesCount += 1
   debug('pipe count=%d opts=%j', state.pipesCount, pipeOpts)
-  var doEnd = (!pipeOpts || pipeOpts.end !== false) && dest !== process.stdout && dest !== process.stderr
+  var doEnd = (!pipeOpts || pipeOpts.end !== false) && dest !== (process as any).stdout && dest !== (process as any).stderr
   var endFn = doEnd ? onend : unpipe
-  if (state.endEmitted) process.nextTick(endFn)
+  if (state.endEmitted) nextTick(endFn)
   else src.once('end', endFn)
   dest.on('unpipe', onunpipe)
 
@@ -901,7 +909,7 @@ Readable.prototype.on = function (ev: any, fn: Function) {
       if (state.length) {
         emitReadable(this)
       } else if (!state.reading) {
-        process.nextTick(nReadingNextTick, this)
+        nextTick(nReadingNextTick, this)
       }
     }
   }
@@ -921,14 +929,14 @@ Readable.prototype.removeListener = function (ev: any, fn: Function) {
     // support once('readable', fn) cycles. This means that calling
     // resume within the same tick will have no
     // effect.
-    process.nextTick(updateReadableListening, this)
+    nextTick(updateReadableListening, this)
   }
 
   return res
 }
 
 Readable.prototype.removeAllListeners = function (ev: any) {
-  var res = Stream.prototype.removeAllListeners.apply(this, arguments)
+  var res = Stream.prototype.removeAllListeners.apply(this, arguments as any)
 
   if (ev === 'readable' || ev === undefined) {
     // We need to check if there is someone still listening to
@@ -937,7 +945,7 @@ Readable.prototype.removeAllListeners = function (ev: any) {
     // support once('readable', fn) cycles. This means that calling
     // resume within the same tick will have no
     // effect.
-    process.nextTick(updateReadableListening, this)
+    nextTick(updateReadableListening, this)
   }
 
   return res
@@ -981,7 +989,7 @@ Readable.prototype.resume = function () {
 function resume (stream: any, state: any) {
   if (!state.resumeScheduled) {
     state.resumeScheduled = true
-    process.nextTick(resume_, stream, state)
+    nextTick(resume_, stream, state)
   }
 }
 
@@ -1155,7 +1163,7 @@ function endReadable (stream: any) {
 
   if (!state.endEmitted) {
     state.ended = true
-    process.nextTick(endReadableNT, state, stream)
+    nextTick(endReadableNT, state, stream)
   }
 }
 

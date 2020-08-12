@@ -4,7 +4,7 @@ import { codes } from '../.././errors'
 
 var ERR_INVALID_OPT_VALUE = codes.ERR_INVALID_OPT_VALUE
 
-function highWaterMarkFrom (options: any, isDuplex: boolean, duplexKey: string | number | symbol) {
+function highWaterMarkFrom (options: any, isDuplex?: boolean, duplexKey: string | number | symbol = 0) {
   return options.highWaterMark != null ? options.highWaterMark : isDuplex ? options[duplexKey] : null
 }
 
